@@ -1,0 +1,11 @@
+# textdomain: lockdown
+
+##[ init.lua ]##
+The server is under lockdown mode. To unlock it, do /lockdown off=
+Control server lockdown state=
+on/off [<reason>]=
+Lockdown mode set.=
+Lockdown unset.=
+The server is under lockdown mode. Reason: Not Given=
+The server is under lockdown mode. Reason: @1=
+The server is not under lockdown mode.=
