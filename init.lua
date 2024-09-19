@@ -24,8 +24,11 @@ local FL = minetest.get_worldpath() .. "/lockdown.txt"
 
 lockdown = {}
 
+local lockdown_state_cache = nil
+
 function lockdown.set_lockdown(reason)
     reason = reason or ""
+    lockdown_state_cache = reason
 
     local f = io.open(FL, "w")
     f:write(reason)
@@ -33,15 +36,22 @@ function lockdown.set_lockdown(reason)
 end
 
 function lockdown.unset_lockdown()
+    lockdown_state_cache = false
     os.remove(FL)
 end
 
 function lockdown.check_lockdown()
-    if minetest.is_singleplayer() then return end
-    local f = io.open(FL, "r")
+    if minetest.is_singleplayer() then return false end
+    if lockdown_state_cache == nil then
+        local f = io.open(FL, "r")
 
-    if f == nil then return end
-    return f:read("*a")
+        if f == nil then
+            lockdown_state_cache = false
+            return false
+        end
+        lockdown_state_cache = f:read("*a")
+        return lockdown_state_cache
+    end
 end
 
 function lockdown.get_kick_reason(reason)
@@ -52,10 +62,10 @@ function lockdown.get_kick_reason(reason)
 end
 
 minetest.register_on_prejoinplayer(function(name)
-    local reason = lockdown.check_lockdown()
-    if reason then
-        local privs = minetest.get_player_privs(name)
-        if not (privs.server or privs.privs) then
+    local privs = minetest.get_player_privs(name)
+    if not (privs.server or privs.privs) then
+        local reason = lockdown.check_lockdown()
+        if reason then
             return lockdown.get_kick_reason(reason)
         end
     end
@@ -67,6 +77,10 @@ minetest.register_on_joinplayer(function(player)
     minetest.chat_send_player(name, minetest.colorize("orange",
         "*** " .. S("The server is under lockdown mode. To unlock it, do /lockdown off")
     ))
+end)
+
+minetest.register_globalstep(function()
+    lockdown_state_cache = nil
 end)
 
 minetest.register_chatcommand("lockdown", {
